@@ -158,3 +158,78 @@ const Nota musicas[TOTAL_MUSICAS][MAX_NOTAS] PROGMEM = {
         {440,320}, {440,640}
     }
 };
+
+void escreverLinha(byte linha, const char *texto)
+{
+    byte coluna = 0;
+
+    lcd.setCursor(0, linha);
+
+    while (coluna < 16 && texto[coluna] != '\0') {
+        lcd.write(texto[coluna]);
+        coluna++;
+    }
+
+    // Apaga caracteres restantes da mensagem anterior.
+    while (coluna < 16) {
+        lcd.write(' ');
+        coluna++;
+    }
+}
+
+void atualizarTela()
+{
+    char nome[17];
+
+    for (byte i = 0; i < 16; i++) {
+        nome[i] = (char)pgm_read_byte(
+            &nomes[musicaAtual][i]
+        );
+    }
+
+    nome[16] = '\0';
+
+    escreverLinha(0, nome);
+
+    if (estado == MENU) {
+        escreverLinha(1, "Escolha e PLAY");
+    } else if (estado == TOCANDO) {
+        escreverLinha(1, "Tocando");
+    } else {
+        escreverLinha(1, "Pausado");
+    }
+
+    digitalWrite(
+        LED_VERDE,
+        estado == TOCANDO ? HIGH : LOW
+    );
+
+    digitalWrite(
+        LED_VERMELHO,
+        estado == PAUSADO ? HIGH : LOW
+    );
+}
+
+bool botaoPressionado(byte botao, unsigned long agora)
+{
+    byte leitura = digitalRead(PINOS_BOTOES[botao]);
+
+    if (leitura != ultimaLeitura[botao]) {
+        ultimaLeitura[botao] = leitura;
+        ultimaMudanca[botao] = agora;
+    }
+
+    if (agora - ultimaMudanca[botao] >= DEBOUNCE_MS) {
+
+        if (leitura != leituraEstavel[botao]) {
+            leituraEstavel[botao] = leitura;
+
+            // INPUT_PULLUP: pressionado corresponde a LOW.
+            if (leitura == LOW) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
