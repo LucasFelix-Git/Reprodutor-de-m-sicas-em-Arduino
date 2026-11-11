@@ -1,52 +1,63 @@
-// Definicao da frequencia do clock(mesma usada na simulaçao no tinkercad).
-#ifndef F_CPU
-#define F_CPU 16000000UL
-#endif
-//bibliotecas. 
-#include <avr/io.h>
-#include <avr/interrupt.h>
+#include <LiquidCrystal.h>
 #include <avr/pgmspace.h>
-#include <util/delay.h>
-#include <stdint.h>
 
-// Definicao do estado da reproducao.
-enum Estado {
-    MENU = 0,
-    TOCANDO = 1,
-    PAUSADO = 2
-};
+// Ordem: RS, E, D4, D5, D6, D7
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
 
-// Definicao dos botoes.
+const byte LED_VERDE = 8;
+const byte LED_VERMELHO = 9;
+const byte PIEZO = 11;
+
 enum Botao {
-    UP = 0,
-    DOWN = 1,
-    PLAY = 2,
-    STOP = 3
+    ANTERIOR,
+    PROXIMA,
+    PLAY,
+    STOP,
+    TOTAL_BOTOES
 };
 
-enum {
-    TOTAL_MUSICAS = 5,
-    MAX_EVENTOS = 47
+const byte PINOS_BOTOES[TOTAL_BOTOES] = {
+    A0, A1, A2, A3
 };
 
-// Controle do tempo em milissegundos.
-volatile uint32_t relogio_ms = 0;
+enum Estado {
+    MENU,
+    TOCANDO,
+    PAUSADO
+};
 
-// Controle do estado da reproducao.
-enum Estado estado = MENU;
+const byte TOTAL_MUSICAS = 5;
+const byte MAX_NOTAS = 47;
 
-uint8_t musica = 0;
-uint8_t indice_nota = 0;
+const unsigned long DEBOUNCE_MS = 30;
+const unsigned int INTERVALO_MS = 25;
 
-uint16_t frequencia_atual = 0;
-uint16_t restante_ms = 0;
+struct Nota {
+    unsigned int frequencia;
+    unsigned int duracao;
+};
 
-uint8_t intervalo = 0;
+Estado estado = MENU;
 
-uint32_t inicio_etapa = 0;
-uint32_t inicio_pausa = 0;
+byte musicaAtual = 0;
+byte notaAtual = 0;
 
-// Controle dos botoes.
-uint8_t leitura_anterior[4] = {1, 1, 1, 1};
-uint8_t botao_estavel[4] = {1, 1, 1, 1};
-uint32_t mudou_em[4] = {0, 0, 0, 0};
+bool emIntervalo = false;
+
+unsigned int frequenciaAtual = 0;
+unsigned int duracaoEtapa = 0;
+
+unsigned long inicioEtapa = 0;
+unsigned long inicioPausa = 0;
+
+byte ultimaLeitura[TOTAL_BOTOES] = {
+    HIGH, HIGH, HIGH, HIGH
+};
+
+byte leituraEstavel[TOTAL_BOTOES] = {
+    HIGH, HIGH, HIGH, HIGH
+};
+
+unsigned long ultimaMudanca[TOTAL_BOTOES] = {
+    0, 0, 0, 0
+};
