@@ -1,5 +1,261 @@
-# PROJETO ● Reprodutor de músicas ●
+# Reprodutor de Música com Arduino UNO
+
+Projeto de faculdade: um reprodutor de músicas controlado por botões, com display LCD, buzzer (piezo) e LEDs indicadores, feito com Arduino UNO e programado em C++.
+
+> **Legenda dos avisos deste README:** tudo que estiver marcado como **[EM BREVE]** ou **[A PREENCHER]** ainda não foi adicionado (fotos, vídeos, dados que dependem do grupo) e será colocado depois.
+
+## Informações do projeto
+
+| Campo | Informação |
+|---|---|
+| Instituição | Centro Universitário FEI |
+| Disciplina | DIGITAL EXPERIENCE ULTIMATE |
+| Professor(a) | Dr. André Luiz Perin |
+| Integrantes do grupo | Lucas Felix Bartholomeu Terra, Pedro Barreto de Oliveira, Gabriel Cerri Lopez|
+| Data | 22/09/2026 |
+
+---
+
+## Sumário
+
+1. [Introdução](#1-introdução)
+2. [Metodologia](#2-metodologia)
+3. [Experimentos](#3-experimentos)
+4. [Tecnologias utilizadas](#4-tecnologias-utilizadas)
+5. [Conclusão](#5-conclusão)
+
+---
+
+## 1. Introdução
+
+### 1.1 Apresentação do problema
+
+Sistemas embarcados precisam, com frequência, interagir com o usuário de forma simples: receber comandos por botões, mostrar informações em um display e dar retorno por luz e som. Um reprodutor de músicas é um bom exemplo prático desse tipo de sistema, porque reúne vários conceitos ao mesmo tempo:
+
+- ler botões físicos sem que um único toque seja interpretado como vários (o chamado *bounce*);
+- gerar sons com frequências e durações diferentes em um microcontrolador que não possui um sistema operacional;
+- manter o sistema responsivo (os botões continuam funcionando enquanto a música toca), sem travar o programa com esperas;
+- guardar várias músicas na memória limitada de um Arduino UNO.
+
+O problema proposto foi: **como construir, com um Arduino UNO e poucos componentes, um reprodutor de músicas que permita escolher uma música, tocar, pausar e parar, mostrando o estado atual do sistema**
+
+### 1.2 Objetivos
+
+**Objetivo geral:** desenvolver um reprodutor de músicas funcional com Arduino UNO, programado em C++.
+
+**Objetivos específicos:**
+
+- Permitir a navegação entre 5 músicas por meio de botões (anterior e próxima).
+- Implementar os comandos de tocar, pausar, continuar e parar.
+- Exibir em um display LCD 16x2 o nome da música e o estado atual (menu, tocando ou pausado).
+- Sinalizar o estado por LEDs (verde para tocando, vermelho para pausado).
+- Reproduzir as melodias com um buzzer.
+- Aplicar na prática conceitos de eletrônica digital e programação de microcontroladores.
+
+---
+
+## 2. Metodologia
+
+### 2.1 Descrição dos materiais utilizados
+
+| Quantidade | Componente | Função no projeto |
+|---|---|---|
+| 1 | Arduino UNO | Microcontrolador que executa o programa e controla todos os componentes |
+| 1 | Display LCD 16x2 (compatível com a biblioteca LiquidCrystal) | Mostra o nome da música e o estado do reprodutor |
+| 4 | Botões (push buttons) | Anterior, Próxima, Play/Pausa e Stop |
+| 1 | Buzzer | Emite o som das músicas |
+| 1 | LED verde | Acende quando a música está tocando |
+| 1 | LED vermelho | Acende quando a música está pausada |
+| **[A CONFIRMAR]** | Resistores para os LEDs (valor: **[A PREENCHER]**) | Limitam a corrente dos LEDs |
+| **[A CONFIRMAR]** | Potenciômetro (valor: **[A PREENCHER]**) | Ajuste do contraste do LCD |
+| **[A CONFIRMAR]** | Protoboard e jumpers | Montagem e ligação dos componentes |
+| 1 | Cabo USB | Alimentação e gravação do programa no Arduino |
 
 
-teste do pedro comitando e vendo se tenho acesso mesmo
-testando tambem
+### 2.2 Ligações (pinagem)
+
+| Componente | Pino do Arduino UNO |
+|---|---|
+| LCD: RS | 2 |
+| LCD: E (Enable) | 3 |
+| LCD: D4 | 4 |
+| LCD: D5 | 5 |
+| LCD: D6 | 6 |
+| LCD: D7 | 7 |
+| LED verde | 8 |
+| LED vermelho | 9 |
+| Buzzer piezo | 11 |
+| Botão Anterior | A0 |
+| Botão Próxima | A1 |
+| Botão Play/Pausa | A2 |
+| Botão Stop | A3 |
+
+Os botões usam o resistor de *pull-up* interno do Arduino (`INPUT_PULLUP`): cada botão liga o pino correspondente ao GND, e o pino lê nível baixo (`LOW`) quando o botão é pressionado. Por isso, não são necessários resistores externos nos botões.
+
+> **[A ADICIONAR]:** esquema elétrico (diagrama de ligações) do circuito, feito no Tinkercad, Fritzing ou similar.
+
+### 2.3 Métodos: como o projeto foi desenvolvido
+
+O desenvolvimento seguiu estas etapas:
+
+1. **Definição das funcionalidades.** Escolhemos o que o reprodutor faria: navegar entre músicas, tocar, pausar, continuar e parar.
+2. **Montagem do circuito.** Ligamos o LCD, os quatro botões, o buzzer e os dois LEDs ao Arduino UNO, conforme a tabela de pinagem acima.
+3. **Escrita do programa em C++** no Arduino IDE, dividido em partes:
+   - **Máquina de estados:** o programa tem três estados (`MENU`, `TOCANDO` e `PAUSADO`). Cada botão faz uma ação diferente dependendo do estado atual.
+   - **Leitura dos botões com debounce:** cada botão só é considerado pressionado depois que o sinal fica estável por 30 ms, o que evita leituras falsas causadas pelo ruído mecânico do contato.
+   - **Armazenamento das músicas na memória flash (PROGMEM):** cada música é uma lista de notas, e cada nota tem uma frequência (em Hz) e uma duração (em ms). Uma frequência igual a 0 representa uma pausa (silêncio). Guardar esses dados na memória flash, e não na RAM, economiza a memória limitada do Arduino UNO.
+   - **Reprodução sem travar o programa:** em vez de usar `delay()` para esperar o fim de cada nota, nos usamos `millis()` para medir o tempo. Assim, o laço principal continua lendo os botões o tempo todo e o STOP e a pausa respondem imediatamente.
+   - **Intervalo entre notas:** 25 ms de silêncio são reservados ao final de cada nota, para que notas repetidas soem separadas.
+   - **Pausa e retomada:** ao pausar, o programa guarda o instante da pausa. Ao continuar, esse tempo é descontado, e a nota segue de onde parou, sem pular ou encurtar.
+   - **Saída de som:** a função `tone()` gera a frequência no buzzer e `noTone()` silencia.
+   - **Interface:** o LCD mostra o nome da música na primeira linha e o estado na segunda ("Escolha e PLAY", "Tocando" ou "Pausado"). Os LEDs acompanham o estado.
+4. **Testes e correções.** Durante o desenvolvimento do código, foi corrigido um erro de estrutura em que várias funções estavam escritas dentro de outra função, o que impedia a compilação. Depois da correção, o programa compilou sem erros no Arduino IDE.
+5. **Testes na montagem física** (descritos na seção de Experimentos).
+
+#### Músicas disponíveis
+
+| # | Música | Quantidade de notas |
+|---|---|---|
+| 1 | Mario | 47 |
+| 2 | Sonic - Green | 36 |
+| 3 | Megalovania | 44 |
+| 4 | Zelda | 41 |
+| 5 | Tetris | 38 |
+
+As melodias são trechos simplificados, adaptados para a saída de um único tom do buzzer.
+
+#### Comandos dos botões
+
+| Estado | Anterior | Próxima | Play/Pausa | Stop |
+|---|---|---|---|---|
+| Menu | Música anterior | Próxima música | Inicia a música | Volta ao início do menu |
+| Tocando | (sem efeito) | (sem efeito) | Pausa | Para e volta ao menu |
+| Pausado | (sem efeito) | (sem efeito) | Continua | Para e volta ao menu |
+
+### 2.4 Foto do projeto montado
+
+> **[EM BREVE – FOTO]** Foto geral do projeto montado (visão de cima, mostrando Arduino, LCD, botões, buzzer e LEDs).
+>
+> `![Projeto montado](imagens/projeto-montado.jpg)`
+
+> **[EM BREVE – FOTO]** Foto de detalhe das ligações (fios e protoboard).
+>
+> `![Detalhe das ligações](imagens/ligacoes.jpg)`
+
+---
+
+## 3. Experimentos
+
+Esta seção mostra o projeto em funcionamento, passo a passo. Cada etapa terá uma foto e uma explicação do que acontece.
+
+### 3.1 Tela inicial (Menu)
+
+Ao ligar, o LCD mostra o nome da primeira música (Mario) e a mensagem "Escolha e PLAY". Os dois LEDs ficam apagados.
+
+> **[EM BREVE – FOTO]** LCD na tela inicial.
+>
+> `![Tela inicial](imagens/exp-01-menu.jpg)`
+
+### 3.2 Navegação entre músicas
+
+Os botões Anterior e Próxima trocam a música exibida no LCD. A lista é circular: depois da última música volta para a primeira, e vice-versa.
+
+> **[EM BREVE – FOTO]** LCD mostrando outra música selecionada (por exemplo, Tetris).
+>
+> `![Troca de música](imagens/exp-02-navegacao.jpg)`
+
+### 3.3 Tocando uma música
+
+Ao apertar Play, a música começa no buzzer, o LCD mostra "Tocando" e o LED verde acende.
+
+> **[EM BREVE – FOTO]** LCD com "Tocando" e LED verde aceso.
+>
+> `![Tocando](imagens/exp-03-tocando.jpg)`
+
+### 3.4 Pausando e continuando
+
+Apertar Play durante a reprodução pausa a música: o som é interrompido, o LCD mostra "Pausado" e o LED vermelho acende. Apertar Play de novo retoma a música do ponto em que parou.
+
+> **[EM BREVE – FOTO]** LCD com "Pausado" e LED vermelho aceso.
+>
+> `![Pausado](imagens/exp-04-pausado.jpg)`
+
+### 3.5 Parando
+
+O botão Stop interrompe o som em qualquer momento e volta ao menu, com os LEDs apagados. Quando uma música termina sozinha, o reprodutor também volta ao menu.
+
+> **[EM BREVE – FOTO]** LCD de volta ao menu depois do Stop.
+>
+> `![Stop](imagens/exp-05-stop.jpg)`
+
+### 3.6 Vídeos
+
+> **[EM BREVE – VÍDEO]** Vídeo geral mostrando todas as funções: navegar, tocar, pausar, continuar e parar.
+>
+> **[EM BREVE – VÍDEO]** Vídeo de cada música sendo reproduzida (Mario, Sonic, Megalovania, Zelda e Tetris).
+>
+
+
+### 3.7 Resultados observados
+
+> **[A PREENCHER]** descrever o que foi observado
+
+---
+
+## 4. Tecnologias utilizadas
+
+| Tecnologia | Uso |
+|---|---|
+| Arduino UNO (microcontrolador ATmega328P) | Plataforma de hardware do projeto |
+| C++ | Linguagem de programação |
+| Arduino IDE | Edição, compilação e envio do código para a placa |
+| Biblioteca `LiquidCrystal` | Controle do display LCD 16x2 |
+| Biblioteca `avr/pgmspace.h` | Leitura de dados guardados na memória flash (PROGMEM) |
+| Funções `tone()` / `noTone()` | Geração de som no buzzer |
+| Função `millis()` | Controle de tempo sem travar o programa |
+| Tinkercard | Plataforma de circuitos digitais|
+
+---
+
+## 5. Conclusão
+
+### 5.1 Como o problema foi resolvido
+
+O desafio era fazer um reprodutor de músicas que respondesse bem ao usuário e funcionasse dentro dos limites de um Arduino UNO. Cada dificuldade foi resolvida assim:
+
+- **Organização do comportamento.** Em vez de espalhar condições pelo código, usamos uma máquina de estados com três estados (menu, tocando e pausado). Isso deixou claro o que cada botão faz em cada situação e evitou comandos sem sentido, como trocar de música no meio da reprodução.
+- **Botões confiáveis.** Aplicamos debounce por software (30 ms) e o `INPUT_PULLUP`, o que dispensou resistores externos e eliminou leituras duplicadas.
+- **Som e tempo.** Cada música é uma sequência de pares frequência/duração. O programa toca uma nota com `tone()`, mede o tempo com `millis()` e passa para a próxima quando a duração termina, com um pequeno silêncio entre notas. Como não usamos `delay()`, os botões são lidos continuamente e o Stop e a pausa respondem na hora.
+- **Pausa precisa.** Ao pausar, guardamos o instante da pausa e, ao retomar, descontamos esse tempo, assim a nota continua exatamente de onde parou.
+- **Pouca memória.** As cinco músicas ficam na memória flash (PROGMEM), ocupando cerca de 940 bytes, e não consomem a RAM, que é de apenas 2 KB no Arduino UNO.
+- **Retorno ao usuário.** O LCD mostra o nome da música e o estado, e os LEDs verde e vermelho dão um sinal visual rápido de "tocando" e "pausado".
+
+### 5.2 Limitações
+
+- O buzzer produz apenas um tom por vez, então as músicas são versões simplificadas das melodias originais.
+- Os botões Anterior e Próxima só funcionam no menu, não durante a reprodução.
+- Cada música tem no máximo 47 notas.
+- O nome da música no LCD é limitado a 16 caracteres.
+
+### 5.3 Considerações finais
+
+O projeto permitiu praticar, em um caso concreto, programação de microcontroladores, leitura de entradas digitais, controle de display, geração de som e trabalho em equipe. A maior lição técnica foi a importância de organizar bem o código e o tempo: separar o programa em funções com uma única responsabilidade e evitar bloqueios tornou o sistema simples de entender e de testar.
+
+---
+
+## Como executar o projeto
+
+1. Monte o circuito conforme a tabela de pinagem da seção 2.2.
+2. Abra o Arduino IDE e crie um sketch novo.
+3. Cole o código do arquivo `main.c++`.
+4. Selecione a placa **Arduino Uno** e a porta USB correta em *Tools*.
+5. Clique em **Verificar** para compilar e depois em **Carregar** para enviar à placa.
+
+## Estrutura do repositório
+
+```
+.
+├── main.c++        # Código do projeto
+├── README.md       # Este arquivo
+└── imagens/        # [EM BREVE] Fotos e vídeos do projeto
+```
