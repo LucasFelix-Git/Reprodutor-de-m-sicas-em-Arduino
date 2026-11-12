@@ -231,8 +231,11 @@ bool botaoPressionado(byte botao, unsigned long agora)
         }
     }
 
-    //implementa reproducao pausa e parada das musicas
-    void definirSom(unsigned int frequencia)
+    return false;
+}
+
+//implementa reproducao pausa e parada das musicas
+void definirSom(unsigned int frequencia)
 {
     if (frequencia == 0) {
         noTone(PIEZO);
@@ -345,5 +348,79 @@ void atualizarMusica()
     }
 }
 
-    return false;
+void setup()
+{
+    pinMode(LED_VERDE, OUTPUT);
+    pinMode(LED_VERMELHO, OUTPUT);
+    pinMode(PIEZO, OUTPUT);
+
+    digitalWrite(LED_VERDE, LOW);
+    digitalWrite(LED_VERMELHO, LOW);
+    digitalWrite(PIEZO, LOW);
+
+    for (byte i = 0; i < TOTAL_BOTOES; i++) {
+        pinMode(PINOS_BOTOES[i], INPUT_PULLUP);
+    }
+
+    // Aguarda a alimentacao estabilizar.
+    delay(100);
+
+    lcd.begin(16, 2);
+    lcd.clear();
+
+    atualizarTela();
+}
+
+void loop()
+{
+    unsigned long agora = millis();
+
+    // Le todos os botoes em cada repeticao.
+    bool anterior = botaoPressionado(ANTERIOR, agora);
+    bool proxima = botaoPressionado(PROXIMA, agora);
+    bool play = botaoPressionado(PLAY, agora);
+    bool stop = botaoPressionado(STOP, agora);
+
+    // STOP tem prioridade.
+    if (stop) {
+        pararMusica();
+        return;
+    }
+
+    if (estado == MENU) {
+
+        if (anterior) {
+            if (musicaAtual == 0) {
+                musicaAtual = TOTAL_MUSICAS - 1;
+            } else {
+                musicaAtual--;
+            }
+
+            atualizarTela();
+
+        } else if (proxima) {
+            musicaAtual++;
+
+            if (musicaAtual >= TOTAL_MUSICAS) {
+                musicaAtual = 0;
+            }
+
+            atualizarTela();
+        }
+
+        if (play) {
+            iniciarMusica();
+        }
+
+        return;
+    }
+
+    if (play) {
+        alternarPausa();
+        return;
+    }
+
+    if (estado == TOCANDO) {
+        atualizarMusica();
+    }
 }
