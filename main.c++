@@ -231,5 +231,119 @@ bool botaoPressionado(byte botao, unsigned long agora)
         }
     }
 
+    //implementa reproducao pausa e parada das musicas
+    void definirSom(unsigned int frequencia)
+{
+    if (frequencia == 0) {
+        noTone(PIEZO);
+    } else {
+        tone(PIEZO, frequencia);
+    }
+}
+
+void carregarNota()
+{
+    unsigned int duracao;
+
+    frequenciaAtual = pgm_read_word(
+        &musicas[musicaAtual][notaAtual].frequencia
+    );
+
+    duracao = pgm_read_word(
+        &musicas[musicaAtual][notaAtual].duracao
+    );
+
+    // Reserva uma pausa curta entre as notas.
+    if (duracao > INTERVALO_MS) {
+        duracaoEtapa = duracao - INTERVALO_MS;
+    } else {
+        duracaoEtapa = 1;
+    }
+
+    emIntervalo = false;
+
+    definirSom(frequenciaAtual);
+    inicioEtapa = millis();
+}
+
+void iniciarMusica()
+{
+    notaAtual = 0;
+    estado = TOCANDO;
+
+    atualizarTela();
+    carregarNota();
+}
+
+void pararMusica()
+{
+    definirSom(0);
+
+    estado = MENU;
+    notaAtual = 0;
+    frequenciaAtual = 0;
+    emIntervalo = false;
+
+    atualizarTela();
+}
+
+void alternarPausa()
+{
+    if (estado == TOCANDO) {
+        inicioPausa = millis();
+
+        definirSom(0);
+        estado = PAUSADO;
+
+        atualizarTela();
+
+    } else if (estado == PAUSADO) {
+        estado = TOCANDO;
+
+        atualizarTela();
+
+        // Desconta o tempo em que ficou pausado.
+        inicioEtapa += millis() - inicioPausa;
+
+        if (emIntervalo) {
+            definirSom(0);
+        } else {
+            definirSom(frequenciaAtual);
+        }
+    }
+}
+
+void atualizarMusica()
+{
+    unsigned long agora = millis();
+
+    if (agora - inicioEtapa < duracaoEtapa) {
+        return;
+    }
+
+    if (!emIntervalo) {
+        // A nota terminou: inicia o intervalo.
+        definirSom(0);
+
+        emIntervalo = true;
+        duracaoEtapa = INTERVALO_MS;
+        inicioEtapa = millis();
+
+    } else {
+        // O intervalo terminou: avanca uma nota.
+        notaAtual++;
+
+        byte total = pgm_read_byte(
+            &quantidades[musicaAtual]
+        );
+
+        if (notaAtual >= total) {
+            pararMusica();
+        } else {
+            carregarNota();
+        }
+    }
+}
+
     return false;
 }
