@@ -61,13 +61,12 @@ O problema proposto foi: **como construir, com um Arduino UNO e poucos component
 | Quantidade | Componente | Função no projeto |
 |---|---|---|
 | 1 | Arduino UNO | Microcontrolador que executa o programa e controla todos os componentes |
-| 1 | Display LCD 16x2 (compatível com a biblioteca LiquidCrystal) | Mostra o nome da música e o estado do reprodutor |
+| 1 | Display LCD 16x2 com módulo I2C (chip PCF8574, endereço `0x27`) | Mostra o nome da música e o estado do reprodutor. Comunica-se com o Arduino por apenas dois fios de dados (SDA e SCL) |
 | 4 | Botões (push buttons) | Anterior, Próxima, Play/Pausa e Stop |
 | 1 | Buzzer | Emite o som das músicas |
 | 1 | LED verde | Acende quando a música está tocando |
 | 1 | LED vermelho | Acende quando a música está pausada |
 | **[A CONFIRMAR]** | Resistores para os LEDs (valor: **[A PREENCHER]**) | Limitam a corrente dos LEDs |
-| **[A CONFIRMAR]** | Potenciômetro (valor: **[A PREENCHER]**) | Ajuste do contraste do LCD |
 | **[A CONFIRMAR]** | Protoboard e jumpers | Montagem e ligação dos componentes |
 | 1 | Cabo USB | Alimentação e gravação do programa no Arduino |
 
@@ -76,12 +75,10 @@ O problema proposto foi: **como construir, com um Arduino UNO e poucos component
 
 | Componente | Pino do Arduino UNO |
 |---|---|
-| LCD: RS | 2 |
-| LCD: E (Enable) | 3 |
-| LCD: D4 | 4 |
-| LCD: D5 | 5 |
-| LCD: D6 | 6 |
-| LCD: D7 | 7 |
+| LCD I2C: GND | GND |
+| LCD I2C: VCC | 5V |
+| LCD I2C: SDA | A4 |
+| LCD I2C: SCL | A5 |
 | LED verde | 8 |
 | LED vermelho | 9 |
 | Buzzer piezo | 11 |
@@ -92,14 +89,20 @@ O problema proposto foi: **como construir, com um Arduino UNO e poucos component
 
 Os botões usam o resistor de *pull-up* interno do Arduino (`INPUT_PULLUP`): cada botão liga o pino correspondente ao GND, e o pino lê nível baixo (`LOW`) quando o botão é pressionado. Por isso, não são necessários resistores externos nos botões.
 
-> **[A ADICIONAR]:** esquema elétrico (diagrama de ligações) do circuito, feito no Tinkercad, Fritzing ou similar.
+O display usa o protocolo **I2C**, que precisa de apenas dois fios de dados: **SDA** (dados) e **SCL** (clock), que no Arduino UNO ficam nos pinos **A4** e **A5**. Uma placa adaptadora com o chip PCF8574, presa atrás do display, converte os sinais I2C nos sinais paralelos que o display exige. O endereço do módulo no barramento é `0x27`. Com isso, os pinos digitais 2 a 7 ficam livres.
+
+O esquema elétrico abaixo foi montado e simulado no Tinkercad. Nele, o LCD I2C aparece ligado a 5V, GND, SDA (A4) e SCL (A5), os botões às entradas A0 a A3, os LEDs (com resistores em série) aos pinos 8 e 9 e o buzzer ao pino 11. Na simulação, o display mostra a tela inicial do menu.
+
+![Esquema do circuito no Tinkercad](img/esquema-tinkercad.png)
+
+*Figura 1 – Esquema do circuito montado no Tinkercad, com o LCD mostrando a tela inicial do menu.*
 
 ### 2.3 Métodos: como o projeto foi desenvolvido
 
 O desenvolvimento seguiu estas etapas:
 
 1. **Definição das funcionalidades.** Escolhemos o que o reprodutor faria: navegar entre músicas, tocar, pausar, continuar e parar.
-2. **Montagem do circuito.** Ligamos o LCD, os quatro botões, o buzzer e os dois LEDs ao Arduino UNO, conforme a tabela de pinagem acima.
+2. **Montagem do circuito.** Ligamos o LCD (por I2C), os quatro botões, o buzzer e os dois LEDs ao Arduino UNO, conforme a tabela de pinagem e o esquema da Figura 1.
 3. **Escrita do programa em C++** no Arduino IDE, dividido em partes:
    - **Máquina de estados:** o programa tem três estados (`MENU`, `TOCANDO` e `PAUSADO`). Cada botão faz uma ação diferente dependendo do estado atual.
    - **Leitura dos botões com debounce:** cada botão só é considerado pressionado depois que o sinal fica estável por 30 ms, o que evita leituras falsas causadas pelo ruído mecânico do contato.
@@ -108,9 +111,10 @@ O desenvolvimento seguiu estas etapas:
    - **Intervalo entre notas:** 25 ms de silêncio são reservados ao final de cada nota, para que notas repetidas soem separadas.
    - **Pausa e retomada:** ao pausar, o programa guarda o instante da pausa. Ao continuar, esse tempo é descontado, e a nota segue de onde parou, sem pular ou encurtar.
    - **Saída de som:** a função `tone()` gera a frequência no buzzer e `noTone()` silencia.
-   - **Interface:** o LCD mostra o nome da música na primeira linha e o estado na segunda ("Escolha e PLAY", "Tocando" ou "Pausado"). Os LEDs acompanham o estado.
+   - **Interface:** o LCD mostra o nome da música na primeira linha e o estado na segunda ("Escolha e PLAY", "Tocando" ou "Pausado"). Os LEDs acompanham o estado. O display é controlado pela biblioteca `LiquidCrystal_I2C`: no `setup()`, `lcd.init()` inicializa o display e `lcd.backlight()` liga a luz de fundo.
 4. **Testes e correções.** Durante o desenvolvimento do código, foi corrigido um erro de estrutura em que várias funções estavam escritas dentro de outra função, o que impedia a compilação. Depois da correção, o programa compilou sem erros no Arduino IDE.
-5. **Testes na montagem física** (descritos na seção de Experimentos).
+5. **Troca do display para I2C e simulação.** O display, que inicialmente era controlado em modo paralelo (seis pinos, de 2 a 7), passou a usar um módulo I2C, que precisa de apenas dois fios (SDA e SCL) e libera esses pinos. O código foi ajustado para a biblioteca `LiquidCrystal_I2C` e o circuito foi montado e simulado no Tinkercad, onde o programa funcionou corretamente.
+6. **Testes na montagem física** (descritos na seção de Experimentos).
 
 #### Músicas disponíveis
 
@@ -209,11 +213,12 @@ O botão Stop interrompe o som em qualquer momento e volta ao menu, com os LEDs 
 | Arduino UNO (microcontrolador ATmega328P) | Plataforma de hardware do projeto |
 | C++ | Linguagem de programação |
 | Arduino IDE | Edição, compilação e envio do código para a placa |
-| Biblioteca `LiquidCrystal` | Controle do display LCD 16x2 |
+| Biblioteca `LiquidCrystal_I2C` | Controle do display LCD 16x2 com módulo I2C |
+| Biblioteca `Wire` | Comunicação I2C entre o Arduino e o display (SDA em A4, SCL em A5) |
 | Biblioteca `avr/pgmspace.h` | Leitura de dados guardados na memória flash (PROGMEM) |
 | Funções `tone()` / `noTone()` | Geração de som no buzzer |
 | Função `millis()` | Controle de tempo sem travar o programa |
-| Tinkercard | Plataforma de circuitos digitais|
+| Tinkercad | Plataforma online para montar e simular o circuito (esquema da Figura 1) |
 
 ---
 
@@ -236,6 +241,7 @@ O desafio era fazer um reprodutor de músicas que respondesse bem ao usuário e 
 - Os botões Anterior e Próxima só funcionam no menu, não durante a reprodução.
 - Cada música tem no máximo 47 notas.
 - O nome da música no LCD é limitado a 16 caracteres.
+- O endereço I2C do display (`0x27`) está fixo no código. Módulos com outro endereço (por exemplo, `0x3F`) exigem trocar esse valor.
 
 ### 5.3 Considerações finais
 
@@ -245,11 +251,12 @@ O projeto permitiu praticar, em um caso concreto, programação de microcontrola
 
 ## Como executar o projeto
 
-1. Monte o circuito conforme a tabela de pinagem da seção 2.2.
-2. Abra o Arduino IDE e crie um sketch novo.
-3. Cole o código do arquivo `main.c++`.
-4. Selecione a placa **Arduino Uno** e a porta USB correta em *Tools*.
-5. Clique em **Verificar** para compilar e depois em **Carregar** para enviar à placa.
+1. Monte o circuito conforme a tabela de pinagem e o esquema da seção 2.2.
+2. Abra o Arduino IDE e instale a biblioteca **LiquidCrystal I2C** em *Sketch > Incluir Biblioteca > Gerenciar Bibliotecas*. A biblioteca `Wire` já vem com o IDE.
+3. Crie um sketch novo.
+4. Cole o código do arquivo `main.c++`.
+5. Selecione a placa **Arduino Uno** e a porta USB correta em *Tools*.
+6. Clique em **Verificar** para compilar e depois em **Carregar** para enviar à placa.
 
 ## Estrutura do repositório
 
@@ -257,5 +264,5 @@ O projeto permitiu praticar, em um caso concreto, programação de microcontrola
 .
 ├── main.c++        # Código do projeto
 ├── README.md       # Este arquivo
-└── imagens/        # [EM BREVE] Fotos e vídeos do projeto
+└── imagens/        # Esquema do circuito (Tinkercad); [EM BREVE] fotos e vídeos do projeto
 ```
