@@ -1,8 +1,9 @@
-#include <LiquidCrystal.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include <avr/pgmspace.h>
 
-// Ordem: RS, E, D4, D5, D6, D7
-LiquidCrystal lcd(2, 3, 4, 5, 6, 7);
+// Arduino Uno: SDA em A4 e SCL em A5.
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const byte LED_VERDE = 8;
 const byte LED_VERMELHO = 9;
@@ -76,7 +77,6 @@ const byte quantidades[TOTAL_MUSICAS] PROGMEM = {
 
 // Trechos simplificados para piezo.
 const Nota musicas[TOTAL_MUSICAS][MAX_NOTAS] PROGMEM = {
-
     // Mario
     {
         {659,140}, {659,140}, {0,140},   {659,140},
@@ -170,7 +170,7 @@ void escreverLinha(byte linha, const char *texto)
         coluna++;
     }
 
-    // Apaga caracteres restantes da mensagem anterior.
+    // Apaga os caracteres restantes da mensagem anterior.
     while (coluna < 16) {
         lcd.write(' ');
         coluna++;
@@ -182,9 +182,7 @@ void atualizarTela()
     char nome[17];
 
     for (byte i = 0; i < 16; i++) {
-        nome[i] = (char)pgm_read_byte(
-            &nomes[musicaAtual][i]
-        );
+        nome[i] = (char)pgm_read_byte(&nomes[musicaAtual][i]);
     }
 
     nome[16] = '\0';
@@ -199,15 +197,8 @@ void atualizarTela()
         escreverLinha(1, "Pausado");
     }
 
-    digitalWrite(
-        LED_VERDE,
-        estado == TOCANDO ? HIGH : LOW
-    );
-
-    digitalWrite(
-        LED_VERMELHO,
-        estado == PAUSADO ? HIGH : LOW
-    );
+    digitalWrite(LED_VERDE, estado == TOCANDO ? HIGH : LOW);
+    digitalWrite(LED_VERMELHO, estado == PAUSADO ? HIGH : LOW);
 }
 
 bool botaoPressionado(byte botao, unsigned long agora)
@@ -220,11 +211,10 @@ bool botaoPressionado(byte botao, unsigned long agora)
     }
 
     if (agora - ultimaMudanca[botao] >= DEBOUNCE_MS) {
-
         if (leitura != leituraEstavel[botao]) {
             leituraEstavel[botao] = leitura;
 
-            // INPUT_PULLUP: pressionado corresponde a LOW.
+            // Com INPUT_PULLUP, pressionado corresponde a LOW.
             if (leitura == LOW) {
                 return true;
             }
@@ -234,7 +224,6 @@ bool botaoPressionado(byte botao, unsigned long agora)
     return false;
 }
 
-//implementa reproducao pausa e parada das musicas
 void definirSom(unsigned int frequencia)
 {
     if (frequencia == 0) {
@@ -246,13 +235,11 @@ void definirSom(unsigned int frequencia)
 
 void carregarNota()
 {
-    unsigned int duracao;
-
     frequenciaAtual = pgm_read_word(
         &musicas[musicaAtual][notaAtual].frequencia
     );
 
-    duracao = pgm_read_word(
+    unsigned int duracao = pgm_read_word(
         &musicas[musicaAtual][notaAtual].duracao
     );
 
@@ -305,7 +292,7 @@ void alternarPausa()
 
         atualizarTela();
 
-        // Desconta o tempo em que ficou pausado.
+        // Desconta o tempo em que a musica ficou pausada.
         inicioEtapa += millis() - inicioPausa;
 
         if (emIntervalo) {
@@ -325,7 +312,6 @@ void atualizarMusica()
     }
 
     if (!emIntervalo) {
-        // A nota terminou: inicia o intervalo.
         definirSom(0);
 
         emIntervalo = true;
@@ -333,12 +319,9 @@ void atualizarMusica()
         inicioEtapa = millis();
 
     } else {
-        // O intervalo terminou: avanca uma nota.
         notaAtual++;
 
-        byte total = pgm_read_byte(
-            &quantidades[musicaAtual]
-        );
+        byte total = pgm_read_byte(&quantidades[musicaAtual]);
 
         if (notaAtual >= total) {
             pararMusica();
@@ -362,10 +345,11 @@ void setup()
         pinMode(PINOS_BOTOES[i], INPUT_PULLUP);
     }
 
-    // Aguarda a alimentacao estabilizar.
     delay(100);
 
-    lcd.begin(16, 2);
+    Wire.begin();
+    lcd.init();
+    lcd.backlight();
     lcd.clear();
 
     atualizarTela();
@@ -375,7 +359,6 @@ void loop()
 {
     unsigned long agora = millis();
 
-    // Le todos os botoes em cada repeticao.
     bool anterior = botaoPressionado(ANTERIOR, agora);
     bool proxima = botaoPressionado(PROXIMA, agora);
     bool play = botaoPressionado(PLAY, agora);
@@ -388,7 +371,6 @@ void loop()
     }
 
     if (estado == MENU) {
-
         if (anterior) {
             if (musicaAtual == 0) {
                 musicaAtual = TOTAL_MUSICAS - 1;
