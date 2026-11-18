@@ -2,8 +2,6 @@
 
 Projeto de faculdade: um reprodutor de músicas controlado por botões, com display LCD, buzzer (piezo) e LEDs indicadores, feito com Arduino UNO e programado em C++.
 
-> **Legenda dos avisos deste README:** tudo que estiver marcado como **[EM BREVE]** ou **[A PREENCHER]** ainda não foi adicionado (fotos, vídeos, dados que dependem do grupo) e será colocado depois.
-
 ## Informações do projeto
 
 | Campo | Informação |
@@ -138,13 +136,13 @@ As melodias são trechos simplificados, adaptados para a saída de um único tom
 
 ### 2.4 Foto do projeto montado
 
-> **[EM BREVE – FOTO]** Foto geral do projeto montado (visão de cima, mostrando Arduino, LCD, botões, buzzer e LEDs).
->
-> `![Projeto montado](imagens/projeto-montado.jpg)`
+<img src="img/projeto-montado.jpg" alt="Projeto montado" width="300">
 
-> **[EM BREVE – FOTO]** Foto de detalhe das ligações (fios e protoboard).
->
-> `![Detalhe das ligações](imagens/ligacoes.jpg)`
+*Figura 2 – Visão geral do projeto montado: protoboard com botões, buzzer e LEDs, e o display LCD I2C mostrando "Sonic - Green / Pausado", com o LED vermelho aceso.*
+
+<img src="img/ligacoes.jpg" alt="Detalhe das ligações" width="300">
+
+*Figura 3 – Detalhe da protoboard: os quatro botões, o buzzer, os dois LEDs com resistores em série e os fios de ligação.*
 
 ---
 
@@ -156,55 +154,43 @@ Esta seção mostra o projeto em funcionamento, passo a passo. Cada etapa terá 
 
 Ao ligar, o LCD mostra o nome da primeira música (Mario) e a mensagem "Escolha e PLAY". Os dois LEDs ficam apagados.
 
-> **[EM BREVE – FOTO]** LCD na tela inicial.
->
-> `![Tela inicial](imagens/exp-01-menu.jpg)`
+
 
 ### 3.2 Navegação entre músicas
 
 Os botões Anterior e Próxima trocam a música exibida no LCD. A lista é circular: depois da última música volta para a primeira, e vice-versa.
 
-> **[EM BREVE – FOTO]** LCD mostrando outra música selecionada (por exemplo, Tetris).
->
-> `![Troca de música](imagens/exp-02-navegacao.jpg)`
+<img src="img/exp-02-navegacao.jpg" alt="Troca de música" width="300">
+
+*Figura 4 – LCD no menu depois de navegar: a música selecionada é "Sonic - Green", com a mensagem "Escolha e PLAY".*
 
 ### 3.3 Tocando uma música
 
 Ao apertar Play, a música começa no buzzer, o LCD mostra "Tocando" e o LED verde acende.
 
-> **[EM BREVE – FOTO]** LCD com "Tocando" e LED verde aceso.
->
-> `![Tocando](imagens/exp-03-tocando.jpg)`
-
 ### 3.4 Pausando e continuando
 
 Apertar Play durante a reprodução pausa a música: o som é interrompido, o LCD mostra "Pausado" e o LED vermelho acende. Apertar Play de novo retoma a música do ponto em que parou.
 
-> **[EM BREVE – FOTO]** LCD com "Pausado" e LED vermelho aceso.
->
-> `![Pausado](imagens/exp-04-pausado.jpg)`
+<img src="img/projeto-montado.jpg" alt="Pausado" width="300">
+
+*Figura 5 – Música pausada: o LCD mostra "Pausado" e o LED vermelho está aceso (a mesma foto da Figura 2).*
 
 ### 3.5 Parando
 
 O botão Stop interrompe o som em qualquer momento e volta ao menu, com os LEDs apagados. Quando uma música termina sozinha, o reprodutor também volta ao menu.
 
-> **[EM BREVE – FOTO]** LCD de volta ao menu depois do Stop.
->
-> `![Stop](imagens/exp-05-stop.jpg)`
-
 ### 3.6 Vídeos
 
-> **[EM BREVE – VÍDEO]** Vídeo geral mostrando todas as funções: navegar, tocar, pausar, continuar e parar.
->
-> **[EM BREVE – VÍDEO]** Vídeo de cada música sendo reproduzida (Mario, Sonic, Megalovania, Zelda e Tetris).
->
-
+[Vídeo no YouTube](https://youtube.com/shorts/h6-v0J-CFvk?feature=share)
 
 ### 3.7 Resultados observados
 
-> **[A PREENCHER]** descrever o que foi observado
+Os resultados foram muito importantes para a nossa formação como profissionais, pois nem tudo saiu como planejado, mesmo tendo montado o circuito e a lógica com muita antecedência.
 
----
+Um dos pontos que merece destaque foi um bug no buzzer, que tocava com volume muito baixo. Com a ajuda do professor, entendemos que a protoboard é dividida em segmentos e que, em alguns casos, isso impede que a energia chegue de forma uniforme a toda a placa. A solução foi passar a alimentação para o outro lado da protoboard, o que resolveu o problema.
+
+No fim, tudo funcionou como esperado, dos botões até a interface do display. O projeto também ensinou o grupo inteiro a trabalhar em equipe.
 
 ## 4. Tecnologias utilizadas
 
@@ -264,5 +250,5 @@ O projeto permitiu praticar, em um caso concreto, programação de microcontrola
 .
 ├── main.c++        # Código do projeto
 ├── README.md       # Este arquivo
-└── imagens/        # Esquema do circuito (Tinkercad); [EM BREVE] fotos e vídeos do projeto
+└── img/        # Esquema do circuito (Tinkercad) e fotos do projeto;
 ```
